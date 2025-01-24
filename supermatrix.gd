@@ -7,11 +7,14 @@ const LIGHT_COUNT := 7
 var light_radius := 10
 var light_margin := 2
 var lights: Array[bool] = []
+var previous_lights: Array[bool] = []
 
 
 func _init() -> void:
 	var _discard := lights.resize(LIGHT_COUNT)
+	_discard = previous_lights.resize(LIGHT_COUNT)
 	lights.fill(false)
+	previous_lights.fill(false)
 	custom_minimum_size = 2 * Vector2(
 		LIGHT_COUNT * (light_radius + light_margin),
 		light_radius + light_margin

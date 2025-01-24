@@ -25,4 +25,6 @@ gdscript/warnings/return_value_discarded=1
 
 [display]
 
+window/size/viewport_width=400
+window/size/viewport_height=400
 display_server/driver.linuxbsd="wayland"
