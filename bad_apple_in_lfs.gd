@@ -59,49 +59,56 @@ func get_grid(reo_packet: InSimREOPacket) -> void:
 			break
 
 
-func send_ai_control(plid: int, input: InSim.AIControl, value: int) -> void:
-	var packet := InSimAICPacket.new()
-	packet.plid = plid
-	packet.input = input
-	packet.value = value
-	insim.send_packet(packet)
+func create_ai_control(input: int, gis_time: float, value: int) -> AIInputVal:
+	var ai_input := AIInputVal.new()
+	ai_input.input = input
+	ai_input.gis_time = gis_time
+	ai_input.value = value
+	var _discard := ai_input.get_buffer()
+	return ai_input
 
 
 func send_ai_reset(plid: int) -> void:
 	var matrix := grid.get_child(plids.find(plid)) as Supermatrix
 	matrix.set_all_lights(false)
-	send_ai_state(plid, matrix.lights, matrix.previous_lights)
+	send_ai_state(plid, matrix.lights)
 
 
-func send_ai_state(plid: int, lights: Array[bool], previous_lights: Array[bool]) -> void:
-	if lights[0] != previous_lights[0]:
-		send_ai_control(plid, InSim.AIControl.CS_FOGREAR, 1)
-	if lights[1] != previous_lights[1]:
-		send_ai_control(plid, InSim.AIControl.CS_FOGFRONT, 1)
-	if lights[3] != previous_lights[3]:
-		send_ai_control(plid, InSim.AIControl.CS_EXTRALIGHT, 1)
-	if lights[5] != previous_lights[5]:
-		send_ai_control(plid, InSim.AIControl.CS_FLASH, 1 if lights[5] else 0)
-	if lights[6] != previous_lights[6]:
-		send_ai_control(plid, InSim.AIControl.CS_HEADLIGHTS, 3 if lights[6] else 1)
-	send_ai_control(plid, InSim.AIControl.CS_INDICATORS,
-			4 if lights[2] and lights[4] else 2 if lights[2] else 3 if lights[4] else 1)
+func send_ai_state(plid: int, lights: Array[bool]) -> void:
+	var hold_time := 1 / VIDEO_FPS + 0.02
+	var inputs: Array[AIInputVal] = []
+	inputs.append(create_ai_control(InSim.AIControl.CS_FOGREAR, 0, 3 if lights[0] else 2))
+	inputs.append(create_ai_control(InSim.AIControl.CS_FOGFRONT, 0, 3 if lights[1] else 2))
+	inputs.append(create_ai_control(InSim.AIControl.CS_EXTRALIGHT, 0, 3 if lights[3] else 2))
+	if lights[5]:
+		inputs.append(create_ai_control(InSim.AIControl.CS_FLASH, hold_time, 1))
+	inputs.append(create_ai_control(InSim.AIControl.CS_HEADLIGHTS, 0, 3 if lights[5] else 1))
+	var indicators := 4 if lights[2] and lights[4] else 2 if lights[2] else 3 if lights[4] else 1
+	inputs.append(create_ai_control(InSim.AIControl.CS_INDICATORS, 0, indicators))
+	var packet := InSimAICPacket.new()
+	packet.plid = plid
+	packet.inputs = inputs
+	insim.send_packet(packet)
 
 
 func _on_frame_processed(lights: Array[bool]) -> void:
 	for m in MATRIX_COUNT:
+		var plid := plids[m]
 		var matrix := grid.get_child(m) as Supermatrix
 		matrix.previous_lights = matrix.lights.duplicate()
 		var offset := m * Supermatrix.LIGHT_COUNT
 		for i in Supermatrix.LIGHT_COUNT:
 			matrix.lights[i] = lights[offset + i]
 			matrix.queue_redraw()
-		send_ai_state(plids[m], matrix.lights, matrix.previous_lights)
+		send_ai_state(plid, matrix.lights)
 
 
 func _on_indicator_timer_timeout() -> void:
 	for plid in plids:
-		send_ai_control(plid, InSim.AIControl.CS_INDICATORS, 1)
+		var packet := InSimAICPacket.new()
+		packet.plid = plid
+		packet.inputs.append(create_ai_control(InSim.AIControl.CS_INDICATORS, 0, 1))
+		insim.send_packet(packet)
 
 
 func _on_video_button_pressed() -> void:

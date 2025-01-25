@@ -48,7 +48,7 @@ func process_video() -> void:
 	print("Video size: %dx%d" % [texture.get_width(), texture.get_height()])
 	await get_tree().create_timer(1 / VIDEO_FPS / 2).timeout
 	process_frame(video_player.get_video_texture().get_image())
-	timer.start(1 / VIDEO_FPS / 2)
+	timer.start(1 / VIDEO_FPS)
 
 
 func _on_timer_timeout() -> void:
