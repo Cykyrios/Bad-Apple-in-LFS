@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="bad_apple_in_lfs"
+config/name="Bad Apple in LFS"
 run/main_scene="res://bad_apple_in_lfs.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"

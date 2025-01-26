@@ -59,7 +59,7 @@ func get_grid(reo_packet: InSimREOPacket) -> void:
 			break
 
 
-func create_ai_control(input: int, gis_time: float, value: int) -> AIInputVal:
+func create_ai_control(input: InSim.AIControl, gis_time: float, value: int) -> AIInputVal:
 	var ai_input := AIInputVal.new()
 	ai_input.input = input
 	ai_input.gis_time = gis_time
@@ -75,13 +75,11 @@ func send_ai_reset(plid: int) -> void:
 
 
 func send_ai_state(plid: int, lights: Array[bool]) -> void:
-	var hold_time := 1 / VIDEO_FPS + 0.02
 	var inputs: Array[AIInputVal] = []
 	inputs.append(create_ai_control(InSim.AIControl.CS_FOGREAR, 0, 3 if lights[0] else 2))
 	inputs.append(create_ai_control(InSim.AIControl.CS_FOGFRONT, 0, 3 if lights[1] else 2))
 	inputs.append(create_ai_control(InSim.AIControl.CS_EXTRALIGHT, 0, 3 if lights[3] else 2))
-	if lights[5]:
-		inputs.append(create_ai_control(InSim.AIControl.CS_FLASH, hold_time, 1))
+	inputs.append(create_ai_control(InSim.AIControl.CS_FLASH, 0, 1 if lights[5] else 0))
 	inputs.append(create_ai_control(InSim.AIControl.CS_HEADLIGHTS, 0, 3 if lights[5] else 1))
 	var indicators := 4 if lights[2] and lights[4] else 2 if lights[2] else 3 if lights[4] else 1
 	inputs.append(create_ai_control(InSim.AIControl.CS_INDICATORS, 0, indicators))
